@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北海道の衛星データに基づく農作物概況</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .comment {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .image-instruction {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .image-container {
+            position: relative;
+        }
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .image-container .image-description {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .image-container:hover .image-description {
+            opacity: 1;
+        }
+        .back-link {
+            margin-top: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>北海道</h1>
+    
+    <div class="comment">
+        衛星データの分析によると、北海道の農作物の状況は良好です。今年の稲作は平年並みの収穫が見込まれ、小麦の生育も順調です。大豆や甜菜の栽培面積は昨年比5%増加しており、作付けの多様化が進んでいます。一部地域では干ばつの影響が見られますが、全体的には安定した生育状況が確認されています。
+    </div>
+    
+    <p class="image-instruction">以下の画像をクリックすると、データの掲載元にジャンプします。</p>
+    
+    <div class="image-gallery">
+        <!-- 画像1 -->
+        <div class="image-container">
+            <a href="https://example-data.com" target="_blank">
+                <!-- 注: 実際の使用時は、src属性をローカルの画像パスに置き換えてください。例: src="./images/satellite_image_1.jpg" -->
+                <img src="https://picsum.photos/800?random=1" alt="北海道に関する衛星データ1">
+                <div class="image-description">稲作地帯の衛星画像</div>
+            </a>
+        </div>
+        <!-- 画像2 -->
+        <div class="image-container">
+            <a href="https://example-data.com" target="_blank">
+                <!-- 注: 実際の使用時は、src属性をローカルの画像パスに置き換えてください。例: src="./images/satellite_image_2.jpg" -->
+                <img src="https://picsum.photos/800?random=2" alt="北海道に関する衛星データ2">
+                <div class="image-description">小麦畑の生育状況</div>
+            </a>
+        </div>
+        <!-- 画像3 -->
+        <div class="image-container">
+            <a href="https://example-data.com" target="_blank">
+                <!-- 注: 実際の使用時は、src属性をローカルの画像パスに置き換えてください。例: src="./images/satellite_image_3.jpg" -->
+                <img src="https://picsum.photos/800?random=3" alt="北海道に関する衛星データ3">
+                <div class="image-description">大豆栽培エリアの拡大</div>
+            </a>
+        </div>
+        <!-- 画像4 -->
+        <div class="image-container">
+            <a href="https://example-data.com" target="_blank">
+                <!-- 注: 実際の使用時は、src属性をローカルの画像パスに置き換えてください。例: src="./images/satellite_image_4.jpg" -->
+                <img src="https://picsum.photos/800?random=4" alt="北海道に関する衛星データ4">
+                <div class="image-description">干ばつの影響を受けた地域</div>
+            </a>
+        </div>
+    </div>
+
+    <a href="../" class="back-link">一覧に戻る</a>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本地図 with 魚・植物アイコン</title>
+    <script src='https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.css' rel='stylesheet' />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
+            center: [138.2529, 36.2048], // 日本の中心付近
+            zoom: 5
+        });
+
+        map.on('load', function() {
+            // 魚のアイコンを海に追加
+            for (let i = 0; i < 50; i++) {
+                const lng = Math.random() * (145.0 - 123.0) + 123.0;
+                const lat = Math.random() * (45.0 - 24.0) + 24.0;
+                
+                new maplibregl.Marker({element: createIcon('🐟')})
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+            }
+
+            // 植物のアイコンを陸地に追加
+            for (let i = 0; i < 150; i++) {
+                const lng = Math.random() * (145.0 - 123.0) + 123.0;
+                const lat = Math.random() * (45.0 - 24.0) + 24.0;
+                
+                new maplibregl.Marker({element: createIcon('🌱')})
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+            }
+        });
+
+        function createIcon(emoji) {
+            const el = document.createElement('div');
+            el.className = 'marker';
+            el.style.fontSize = '24px';
+            el.textContent = emoji;
+            return el;
+        }
+    </script>
+</body>
+</html>

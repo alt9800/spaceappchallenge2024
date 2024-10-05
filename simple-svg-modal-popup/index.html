@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本の都道府県マップ（アニメーション画像と画像アップロード機能付き）</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #map-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        path {
+            fill: #ccc;
+            stroke: #fff;
+            stroke-width: 0.5;
+            cursor: pointer;
+            transition: fill 0.3s;
+        }
+        path:hover {
+            fill: #999;
+        }
+        .hokkaido {
+            fill: #ff0000;
+        }
+        .hokkaido:hover {
+            fill: #cc0000;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+        #imageContainer {
+            width: 100%;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 10px;
+            animation: changeImage 9s infinite;
+        }
+        @keyframes changeImage {
+            0%, 33% {
+                background-image: url('https://picsum.photos/800?random=1');
+            }
+            33%, 66% {
+                background-image: url('https://picsum.photos/800?random=2');
+            }
+            66%, 100% {
+                background-image: url('https://picsum.photos/800?random=3');
+            }
+        }
+        #editModal {
+            display: none;
+        }
+        #editForm textarea {
+            width: 100%;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container"></div>
+    
+    <!-- Prefecture Info Modal -->
+    <div id="prefectureModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <div id="imageContainer"></div>
+            <p id="modalContent"></p>
+            <button id="editButton">編集</button>
+            <a id="detailLink" href="#" target="_blank">詳細ページへ</a>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>編集</h2>
+            <form id="editForm">
+                <textarea id="editContent"></textarea>
+                <input type="file" id="imageUpload" accept="image/*">
+                <button type="submit">更新</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script>
+        const width = 800;
+        const height = 600;
+        let currentPrefecture = '';
+        let prefectureData = {};
+
+        const svg = d3.select("#map-container")
+            .append("svg")
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .attr("preserveAspectRatio", "xMidYMid meet");
+
+        const projection = d3.geoMercator()
+            .center([137, 35])
+            .scale(1000)
+            .translate([width / 2, height / 2]);
+
+        const path = d3.geoPath().projection(projection);
+
+        // モーダル関連の要素
+        const modal = document.getElementById("prefectureModal");
+        const editModal = document.getElementById("editModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalContent = document.getElementById("modalContent");
+        const detailLink = document.getElementById("detailLink");
+        const imageContainer = document.getElementById("imageContainer");
+        const editButton = document.getElementById("editButton");
+        const editForm = document.getElementById("editForm");
+        const editContent = document.getElementById("editContent");
+        const imageUpload = document.getElementById("imageUpload");
+
+        // モーダルを閉じる
+        document.querySelectorAll(".close").forEach(elem => {
+            elem.onclick = function() {
+                modal.style.display = "none";
+                editModal.style.display = "none";
+            }
+        });
+
+        // モーダル外をクリックしても閉じる
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+            if (event.target == editModal) {
+                editModal.style.display = "none";
+            }
+        }
+
+        // 編集ボタンのイベントリスナー
+        editButton.onclick = function() {
+            editContent.value = prefectureData[currentPrefecture].content;
+            editModal.style.display = "block";
+        }
+
+        // 編集フォームの送信イベント
+        editForm.onsubmit = function(e) {
+            e.preventDefault();
+            prefectureData[currentPrefecture].content = editContent.value;
+            modalContent.textContent = editContent.value;
+            
+            if (imageUpload.files && imageUpload.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    prefectureData[currentPrefecture].image = e.target.result;
+                    updateImageAnimation(e.target.result);
+                }
+                reader.readAsDataURL(imageUpload.files[0]);
+            }
+            
+            editModal.style.display = "none";
+        }
+
+        // 画像アニメーションの更新
+        function updateImageAnimation(newImageUrl) {
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes changeImage {
+                    0%, 100% { background-image: url('${newImageUrl}'); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        d3.json('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
+            .then(function(data) {
+                svg.selectAll("path")
+                    .data(data.features)
+                    .enter()
+                    .append("path")
+                    .attr("d", path)
+                    .attr("fill", function(d) {
+                        return d.properties.nam === "Hokkai Do" ? "#ff0000" : "#ccc";
+                    })
+                    .attr("class", function(d) {
+                        return d.properties.nam === "Hokkai Do" ? "hokkaido" : "";
+                    })
+                    .attr("stroke", "#fff")
+                    .on("click", function(event, d) {
+                        const prefectureName = d.properties.nam_ja;
+                        showPrefectureInfo(prefectureName, d.properties.nam);
+                    });
+
+                // 初期データの設定
+                data.features.forEach(feature => {
+                    const name = feature.properties.nam;
+                    const nameJa = feature.properties.nam_ja;
+                    prefectureData[name] = {
+                        nameJa: nameJa,
+                        content: `${nameJa}の気象概況がここに表示されます。（200文字以内）`,
+                        // 注意: 以下の画像URLはテスト用です。実際の使用時は適切な画像パスに置き換えてください。
+                        image: 'https://picsum.photos/800?random=' + Math.random()
+                    };
+                });
+            })
+            .catch(function(error) {
+                console.error('データの読み込み中にエラーが発生しました:', error);
+            });
+
+        function showPrefectureInfo(prefectureNameJa, prefectureNameEn) {
+            currentPrefecture = prefectureNameEn;
+            modalTitle.textContent = prefectureNameJa;
+            modalContent.textContent = prefectureData[prefectureNameEn].content;
+            detailLink.href = `./${prefectureNameEn}/index.html`;
+            
+            // 注意: 以下の画像設定はテスト用です。実際の使用時は適切な画像パスに置き換えてください。
+            const images = [
+                'https://picsum.photos/800?random=1',
+                'https://picsum.photos/800?random=2',
+                'https://picsum.photos/800?random=3'
+            ];
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes changeImage {
+                    0%, 33% { background-image: url('${images[0]}'); }
+                    33%, 66% { background-image: url('${images[1]}'); }
+                    66%, 100% { background-image: url('${images[2]}'); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            modal.style.display = "block";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本の都道府県マップ（沖縄含む）</title>
+    <style>
+        #map-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        path {
+            fill: #ccc;
+            stroke: #fff;
+            stroke-width: 0.5;
+            cursor: pointer;
+            transition: fill 0.3s;
+        }
+        path:hover {
+            fill: #999;
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script>
+        const width = 800;
+        const height = 600;
+
+        const svg = d3.select("#map-container")
+            .append("svg")
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .attr("preserveAspectRatio", "xMidYMid meet");
+
+        const projection = d3.geoMercator()
+            .center([137, 35])
+            .scale(1000)
+            .translate([width / 2, height / 2]);
+
+        const path = d3.geoPath().projection(projection);
+
+        d3.json('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
+            .then(function(data) {
+                svg.selectAll("path")
+                    .data(data.features)
+                    .enter()
+                    .append("path")
+                    .attr("d", path)
+                    .attr("fill", "#ccc")
+                    .attr("stroke", "#fff")
+                    .on("click", function(event, d) {
+                        const prefectureName = d.properties.name;
+                        console.log(`${prefectureName}がクリックされました`);
+                        alert(`${prefectureName}がクリックされました`);
+                    });
+                
+                // 都道府県名を表示
+                svg.selectAll("text")
+                    .data(data.features)
+                    .enter()
+                    .append("text")
+                    .attr("transform", function(d) { 
+                        return "translate(" + path.centroid(d) + ")"; 
+                    })
+                    .attr("dy", ".35em")
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "8px")
+                    .text(function(d) { return d.properties.name; });
+            })
+            .catch(function(error) {
+                console.error('データの読み込み中にエラーが発生しました:', error);
+            });
+    </script>
+</body>
+</html>
