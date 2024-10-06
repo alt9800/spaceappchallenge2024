@@ -7,7 +7,7 @@ const PrefectureDataPage = () => {
       const dummyData = [
           {
               id: 1,
-              photo: "https://picsum.photos/800?random=1",
+              photo: "https://picsum.photos/400?random=1",
               comment: "宮城県の沿岸部における津波後の復興状況を示す衛星画像です。緑地の回復と新たな都市計画の実施が確認できます。",
               username: "researcher1",
               photoDescription: "宮城県沿岸部の復興状況",
@@ -15,7 +15,7 @@ const PrefectureDataPage = () => {
           },
           {
               id: 2,
-              photo: "https://picsum.photos/800?random=2",
+              photo: "https://picsum.photos/400?random=2",
               comment: "仙台市中心部の都市化進展を示す画像です。過去10年間で緑地面積が10%減少し、高層ビルが増加していることが分かります。",
               username: "urbanplanner",
               photoDescription: "仙台市中心部の都市化",
@@ -23,7 +23,7 @@ const PrefectureDataPage = () => {
           },
           {
               id: 3,
-              photo: "https://picsum.photos/800?random=3",
+              photo: "https://picsum.photos/400?random=3",
               comment: "宮城県南部の農地利用状況です。休耕地の増加が見られますが、一部地域では新たな作物導入による土地利用の変化も確認できます。",
               username: "agri-analyst",
               photoDescription: "宮城県南部の農地利用",
@@ -35,8 +35,8 @@ const PrefectureDataPage = () => {
 
   return (
       <div className="container mx-auto p-4">
-          <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">{prefectureName}の衛星データ解析結果</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+              <h1 className="text-2xl font-bold mb-2 sm:mb-0">{prefectureName}の衛星データ解析結果</h1>
               <button onClick={() => window.history.back()} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                   元のページに戻る
               </button>
@@ -44,8 +44,8 @@ const PrefectureDataPage = () => {
           <div className="space-y-4">
               {cards.map(card => (
                   <div key={card.id} className="border rounded-lg overflow-hidden shadow-lg">
-                      <div className="p-4 flex">
-                          <div className="relative w-1/3 mr-4">
+                      <div className="p-4 flex flex-col sm:flex-row h-full">
+                          <div className="relative w-full sm:w-1/3 mb-4 sm:mb-0 sm:mr-4">
                               <img 
                                   src={card.photo} 
                                   alt={`Satellite data for ${prefectureName}`}
@@ -58,9 +58,11 @@ const PrefectureDataPage = () => {
                                   </a>
                               </div>
                           </div>
-                          <div className="w-2/3">
-                              <p className="mb-2">{card.comment}</p>
-                              <p className="text-right text-sm text-gray-500">by {card.username}</p>
+                          <div className="w-full sm:w-2/3 flex flex-col justify-between">
+                              <div className="flex items-center h-full">
+                                  <p className="text-left">{card.comment}</p>
+                              </div>
+                              <p className="text-right text-sm text-gray-500 mt-2">by {card.username}</p>
                           </div>
                       </div>
                   </div>
@@ -70,4 +72,4 @@ const PrefectureDataPage = () => {
   );
 };
 
-ReactDOM.render(<PrefectureDataPage />, document.getElementById('root'));s
+ReactDOM.render(<PrefectureDataPage />, document.getElementById('root'));
