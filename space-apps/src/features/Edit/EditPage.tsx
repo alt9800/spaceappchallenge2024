@@ -1,3 +1,4 @@
+import React, { ChangeEvent, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -5,8 +6,10 @@ import {
   CardMedia,
   TextField,
   Typography,
+  CircularProgress,
+  Snackbar,
 } from "@mui/material";
-import { ChangeEvent, useRef, useState } from "react";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { Add } from "@mui/icons-material";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../../config/firebase";
@@ -15,17 +18,32 @@ import { addDoc, collection } from "firebase/firestore";
 interface EditPageProps {
   prefecture: string;
   prefecture_name: string;
+  onClose: () => void; // モーダルを閉じる関数
 }
-type PageComponentWithProps<P = {}> = React.FC<P> & { path: string };
 
-const EditPage: PageComponentWithProps<EditPageProps> = ({
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>((props, ref) => {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
+const EditPage: React.FC<EditPageProps> = ({
   prefecture,
   prefecture_name,
+  onClose,
 }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [explanation, setExplanation] = useState("");
   const [nickname, setNickname] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -47,45 +65,67 @@ const EditPage: PageComponentWithProps<EditPageProps> = ({
 
   const handleSubmit = async () => {
     if (!imageFile) {
-      alert("画像を選択してください");
+      setSnackbar({
+        open: true,
+        message: "画像を選択してください",
+        severity: "error",
+      });
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // 画像をStorageにアップロード
       const storageRef = ref(storage, `images/${Date.now()}_${imageFile.name}`);
       await uploadBytes(storageRef, imageFile);
       const imageUrl = await getDownloadURL(storageRef);
 
-      // Firestoreにデータを保存
       await addDoc(collection(db, "timeline"), {
         image_path: imageUrl,
         explanatory: explanation,
         writer_name: nickname,
-        prefectures: prefecture, // 引数で受け取った都道府県を使用
+        prefectures: prefecture,
         create_at: new Date(),
         update_at: new Date(),
       });
 
-      alert("データが正常に登録されました");
-      // フォームをリセット
-      setImagePreview(null);
-      setImageFile(null);
-      setExplanation("");
-      setNickname("");
+      setSnackbar({
+        open: true,
+        message: "データが正常に登録されました",
+        severity: "success",
+      });
+      setTimeout(() => {
+        onClose(); // モーダルを閉じる
+      }, 1000); // スナックバーが表示されてから1秒後にモーダルを閉じる
     } catch (error) {
       console.error("Error adding document: ", error);
-      alert("エラーが発生しました。もう一度お試しください。");
+      setSnackbar({
+        open: true,
+        message: "エラーが発生しました。もう一度お試しください。",
+        severity: "error",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleCloseSnackbar = (
+    event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
     <Box
-      display={"flex"}
+      display="flex"
       flexGrow={1}
-      flexDirection={"column"}
-      justifyContent={"center"}
-      alignItems={"flex-start"}
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="flex-start"
       gap={1}
       p={3}
     >
@@ -162,13 +202,30 @@ const EditPage: PageComponentWithProps<EditPageProps> = ({
           color="inherit"
           size="small"
           onClick={handleSubmit}
+          disabled={isLoading}
         >
-          データ登録
+          {isLoading ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            "データ登録"
+          )}
         </Button>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
 
-EditPage.path = "/edit";
 export default EditPage;
