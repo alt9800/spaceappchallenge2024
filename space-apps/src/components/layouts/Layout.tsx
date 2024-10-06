@@ -1,14 +1,9 @@
-import {
-  Drawer,
-  Box,
-  Divider,
-} from "@mui/material";
+import { Drawer, Box, Divider, Typography } from "@mui/material";
 import MenuContent from "./components/MenuContent";
 import AppNavbar from "./components/AppNavbar";
 import { Outlet } from "react-router-dom";
 
 const Layout = () => {
-
   return (
     <Box sx={{ display: "flex" }}>
       <Drawer
@@ -26,7 +21,11 @@ const Layout = () => {
             mt: "calc(var(--template-frame-height, 0px) + 4px)",
             p: 1.5,
           }}
-        ></Box>
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            都道府県別衛星カタログ　🛰️　
+          </Typography>
+        </Box>
         <Divider />
         <MenuContent />
       </Drawer>

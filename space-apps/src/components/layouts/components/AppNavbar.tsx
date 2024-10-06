@@ -11,7 +11,6 @@ import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import MenuButton from "./MenuButton";
 import SideMenuMobile from "./SideMenuMobile";
 
-
 const Toolbar = styled(MuiToolbar)({
   width: "100%",
   padding: "12px",
@@ -46,7 +45,6 @@ export default function AppNavbar() {
         borderBottom: "1px solid",
         borderColor: "divider",
         top: "var(--template-frame-height, 0px)",
-
       }}
     >
       <Toolbar variant="regular">
@@ -66,7 +64,7 @@ export default function AppNavbar() {
               component="h1"
               sx={{ color: "text.primary" }}
             >
-              Dashboard
+              都道府県別衛星カタログ　🛰️　
             </Typography>
           </Stack>
           <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
