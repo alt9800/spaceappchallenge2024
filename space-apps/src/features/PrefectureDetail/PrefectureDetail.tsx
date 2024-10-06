@@ -207,6 +207,7 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
           <EditPage
             prefecture={prefectures}
             prefecture_name={prefecture_name}
+            onClose={() => setEditDialogOpen(false)}
           />
         </DialogContent>
       </Dialog>
