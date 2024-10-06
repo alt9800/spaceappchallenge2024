@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Modal, Typography, Button, TextField } from "@mui/material";
+import { Feature, Geometry, GeoJsonProperties } from "geojson";
 import { styled } from "@mui/system";
 import * as d3 from "d3";
-import { Feature, Geometry } from "geojson";
 import { PageComponent } from "../../components/common/Page";
+interface PrefectureData {
+  nameJa: string;
+  content: string;
+  image: string;
+}
 
 const MapContainer = styled(Box)({
   width: "100%",
@@ -20,14 +25,6 @@ const ImageContainer = styled(Box)({
   animation: "changeImage 9s infinite",
 });
 
-interface PrefectureData {
-  [key: string]: {
-    nameJa: string;
-    content: string;
-    image: string;
-  };
-}
-
 interface MapFeature extends Feature<Geometry> {
   properties: {
     nam: string;
@@ -36,63 +33,114 @@ interface MapFeature extends Feature<Geometry> {
 }
 
 const MapPage: PageComponent = () => {
-  const [mapData, setMapData] = useState<MapFeature[] | null>(null);
-  const [prefectureData, setPrefectureData] = useState<PrefectureData>({});
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [prefectureData, setPrefectureData] = useState<{
+    [key: string]: PrefectureData;
+  }>({});
   const [currentPrefecture, setCurrentPrefecture] = useState<string>("");
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [editContent, setEditContent] = useState<string>("");
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-
-  const mapRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
-    fetchMapData();
+    if (svgRef.current) {
+      const width = 800;
+      const height = 600;
+      const svg = d3
+        .select(svgRef.current)
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+      const projection = d3
+        .geoMercator()
+        .center([137, 35])
+        .scale(1000)
+        .translate([width / 2, height / 2]);
+
+      const path = d3.geoPath().projection(projection);
+
+      const zoom = d3
+        .zoom<SVGSVGElement, unknown>()
+        .scaleExtent([1, 8])
+        .on("zoom", (event) => {
+          svg.selectAll("path").attr("transform", event.transform.toString());
+        });
+
+      svg.call(zoom);
+
+      d3.json<GeoJSON.FeatureCollection>(
+        "https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson"
+      )
+        .then((data) => {
+          if (data) {
+            svg
+              .selectAll("path")
+              .data(data.features)
+              .enter()
+              .append("path")
+              .attr("d", path as any)
+              .attr("fill", "#ccc")  // すべての都道府県を同じ色で初期化
+              .attr("stroke", "#fff")
+              .attr("stroke-width", "1")
+              .on(
+                "click",
+                (
+                  event: MouseEvent,
+                  d: Feature<Geometry, GeoJsonProperties>
+                ) => {
+                  const prefectureName = d.properties?.nam_ja;
+                  const prefectureNameEn = d.properties?.nam;
+                  if (prefectureName && prefectureNameEn) {
+                    showPrefectureInfo(prefectureName, prefectureNameEn);
+                  }
+                }
+              )
+              .on("mouseover", function(event, d) {
+                d3.select(this).transition()
+                  .duration(200)
+                  .attr("fill", "#ff0000");
+              })
+              .on("mouseout", function(event, d) {
+                d3.select(this).transition()
+                  .duration(200)
+                  .attr("fill", "#ccc");  // すべての都道府県が同じ色に戻る
+              });
+
+            // Initialize prefecture data
+            const initialPrefectureData: { [key: string]: PrefectureData } = {};
+            data.features.forEach(
+              (feature: Feature<Geometry, GeoJsonProperties>) => {
+                const name = feature.properties?.nam;
+                const nameJa = feature.properties?.nam_ja;
+                if (name && nameJa) {
+                  initialPrefectureData[name] = {
+                    nameJa: nameJa,
+                    content: `${nameJa}の気象概況がここに表示されます。（200文字以内）`,
+                    image: `https://picsum.photos/800?random=${Math.random()}`,
+                  };
+                }
+              }
+            );
+            setPrefectureData(initialPrefectureData);
+          }
+        })
+        .catch((error) => {
+          console.error("データの読み込み中にエラーが発生しました:", error);
+        });
+    }
   }, []);
 
-  const fetchMapData = async () => {
-    try {
-      const response = await fetch(
-        "https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson"
-      );
-      const data = await response.json();
-      setMapData(data.features);
-      initializePrefectureData(data.features);
-    } catch (error) {
-      console.error("Error fetching map data:", error);
-    }
-  };
-
-  const initializePrefectureData = (features: MapFeature[]) => {
-    const data: PrefectureData = {};
-    features.forEach((feature) => {
-      const name = feature.properties.nam;
-      const nameJa = feature.properties.nam_ja;
-      data[name] = {
-        nameJa: nameJa,
-        content: `${nameJa}の気象概況がここに表示されます。（200文字以内）`,
-        image: `https://picsum.photos/800?random=${Math.random()}`,
-      };
-    });
-    setPrefectureData(data);
-  };
-
   const showPrefectureInfo = (
-    prefectureNameJa: string,
+    _prefectureNameJa: string,
     prefectureNameEn: string
   ) => {
     setCurrentPrefecture(prefectureNameEn);
-    setImageUrls([
-      "https://picsum.photos/800?random=1",
-      "https://picsum.photos/800?random=2",
-      "https://picsum.photos/800?random=3",
-    ]);
-    setModalOpen(true);
+    setModalVisible(true);
   };
 
-  const handleEdit = () => {
+  const handleEditClick = () => {
     setEditContent(prefectureData[currentPrefecture]?.content || "");
-    setEditModalOpen(true);
+    setEditModalVisible(true);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -104,7 +152,7 @@ const MapPage: PageComponent = () => {
         content: editContent,
       },
     }));
-    setEditModalOpen(false);
+    setEditModalVisible(false);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,117 +169,70 @@ const MapPage: PageComponent = () => {
               image: result,
             },
           }));
-          setImageUrls([result]);
         }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  useEffect(() => {
-    if (mapData && mapRef.current) {
-      const width = 800;
-      const height = 600;
-      const svg = d3
-        .select(mapRef.current)
-        .attr("viewBox", `0 0 ${width} ${height}`)
-        .attr("preserveAspectRatio", "xMidYMid meet");
-
-      const projection = d3
-        .geoMercator()
-        .center([137, 35])
-        .scale(1000)
-        .translate([width / 2, height / 2]);
-
-      const path = d3.geoPath().projection(projection);
-
-      svg
-        .selectAll("path")
-        .data(mapData)
-        .enter()
-        .append("path")
-        .attr("d", path as any)
-        .attr("fill", (d) =>
-          d.properties.nam === "Hokkai Do" ? "#ff0000" : "#ccc"
-        )
-        .attr("class", (d) =>
-          d.properties.nam === "Hokkai Do" ? "hokkaido" : ""
-        )
-        .attr("stroke", "#fff")
-        .on("click", (event, d: MapFeature) => {
-          showPrefectureInfo(d.properties.nam_ja, d.properties.nam);
-        });
-    }
-  }, [mapData]);
-
   return (
-    <MapContainer>
-      <svg ref={mapRef} width="100%" height="auto" />
+    <div>
+      <svg ref={svgRef} width="100%" height="600px"></svg>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <Typography variant="h6" component="h2">
-            {prefectureData[currentPrefecture]?.nameJa}
-          </Typography>
-          <ImageContainer style={{ backgroundImage: `url(${imageUrls[0]})` }} />
-          <Typography sx={{ mt: 2 }}>
-            {prefectureData[currentPrefecture]?.content}
-          </Typography>
-          <Button onClick={handleEdit}>編集</Button>
-          <Button href={`./${currentPrefecture}/index.html`} target="_blank">
-            詳細ページへ
-          </Button>
-        </Box>
-      </Modal>
+      {modalVisible && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close" onClick={() => setModalVisible(false)}>
+              &times;
+            </span>
+            <h2>{prefectureData[currentPrefecture]?.nameJa}</h2>
+            <div
+              style={{
+                width: "100%",
+                height: "200px",
+                backgroundImage: `url(${prefectureData[currentPrefecture]?.image})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                marginBottom: "10px",
+              }}
+            ></div>
+            <p>{prefectureData[currentPrefecture]?.content}</p>
+            <button onClick={handleEditClick}>編集</button>
+            <a
+              href={`./${currentPrefecture}/index.html`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              詳細ページへ
+            </a>
+          </div>
+        </div>
+      )}
 
-      <Modal open={editModalOpen} onClose={() => setEditModalOpen(false)}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <Typography variant="h6" component="h2">
-            編集
-          </Typography>
-          <form onSubmit={handleEditSubmit}>
-            <TextField
-              multiline
-              rows={4}
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              type="file"
-              onChange={handleImageUpload}
-              inputProps={{ accept: "image/*" }}
-              fullWidth
-              margin="normal"
-            />
-            <Button type="submit">更新</Button>
-          </form>
-        </Box>
-      </Modal>
-    </MapContainer>
+      {editModalVisible && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close" onClick={() => setEditModalVisible(false)}>
+              &times;
+            </span>
+            <h2>編集</h2>
+            <form onSubmit={handleEditSubmit}>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                style={{ width: "100%", height: "100px" }}
+              ></textarea>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+              <button type="submit">更新</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 MapPage.path = "/map";
