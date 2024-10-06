@@ -197,6 +197,8 @@ const MapPage: PageComponent = () => {
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        hideBackdrop
+        style={{ pointerEvents: "none" }}
       >
         <PrefectureTimeline
           open={drawerOpen}

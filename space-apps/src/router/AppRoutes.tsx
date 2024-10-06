@@ -5,7 +5,6 @@ import {
   createBrowserRouter,
 } from "react-router-dom";
 import MapPage from "../features/Map/MapPage";
-import EditPage from "../features/Edit/EditPage";
 import Layout from "../components/layouts/Layout";
 
 const routes: RouteObject[] = [
@@ -16,10 +15,6 @@ const routes: RouteObject[] = [
   {
     path: MapPage.path,
     element: <MapPage />,
-  },
-  {
-    path: EditPage.path,
-    element: <EditPage />,
   },
 ];
 

@@ -5,6 +5,9 @@ import {
   Typography,
   Button,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  IconButton,
 } from "@mui/material";
 import {
   Timeline,
@@ -18,9 +21,12 @@ import {
   Event as EventIcon,
   Image as ImageIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import EditPage from "../Edit/EditPage";
 
 interface TimelineEvent {
   id: string;
@@ -48,6 +54,7 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
   const [timelineData, setTimelineData] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchTimelineData = async () => {
@@ -112,20 +119,20 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
         ) : error ? (
           <Typography color="error">{error}</Typography>
         ) : (
-          <Timeline >
+          <Timeline>
             {timelineData.map((event, index) => (
               <TimelineItem
                 key={event.id}
                 sx={{
-                  '&:before': { display: 'none' },
-                  '&.MuiTimelineItem-positionRight': {
-                    '&::before': {
-                      display: 'none',
+                  "&:before": { display: "none" },
+                  "&.MuiTimelineItem-positionRight": {
+                    "&::before": {
+                      display: "none",
                     },
                   },
                 }}
               >
-                <TimelineSeparator >
+                <TimelineSeparator>
                   <TimelineDot color="primary">
                     {event.image_path ? <ImageIcon /> : <EventIcon />}
                   </TimelineDot>
@@ -150,10 +157,9 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
                     />
                   )}
                   <Button
-                    startIcon={<EditIcon style={{ fontSize: '12px' }} />}
+                    startIcon={<EditIcon style={{ fontSize: "12px" }} />}
                     onClick={onEditClick}
-                    sx={{ fontSize: '12px', height: '12px' }}
-
+                    sx={{ fontSize: "12px", height: "12px" }}
                   >
                     削除
                   </Button>
@@ -163,9 +169,24 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
           </Timeline>
         )}
       </Box>
-      <Button variant="outlined" startIcon={<EditIcon />} onClick={onEditClick} sx={{ mt: 2, mx: 3 }}>
+      <Button
+        variant="outlined"
+        startIcon={<EditIcon />}
+        onClick={() => setEditDialogOpen(true)}
+        sx={{ mt: 2, mx: 3 }}
+      >
         登録
       </Button>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogContent>
+          <EditPage prefecture={prefectures} />
+        </DialogContent>
+      </Dialog>
     </Drawer>
   );
 };
