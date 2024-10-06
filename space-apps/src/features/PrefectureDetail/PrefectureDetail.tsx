@@ -8,6 +8,8 @@ import {
   Dialog,
   DialogContent,
   IconButton,
+  DialogActions,
+  DialogTitle,
 } from "@mui/material";
 import {
   Timeline,
@@ -24,7 +26,15 @@ import {
   Delete as DeleteIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "../../config/firebase";
 import EditPage from "../Edit/EditPage";
 
@@ -42,73 +52,84 @@ interface PrefectureTimelineProps {
   open: boolean;
   onClose: () => void;
   prefectures: string;
-  onEditClick: () => void;
 }
 
 const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
   open,
   onClose,
   prefectures,
-  onEditClick,
 }) => {
   const [timelineData, setTimelineData] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(
+    null
+  );
+
+  const fetchTimelineData = async () => {
+    try {
+      setLoading(true);
+      const timelineCollection = collection(db, "timeline");
+      const q = query(
+        timelineCollection,
+        where("prefectures", "==", prefectures)
+        //orderBy("create_at", "desc")
+      );
+
+      const querySnapshot = await getDocs(q);
+      const events: TimelineEvent[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        events.push({
+          id: doc.id,
+          create_at: data.create_at.toDate(),
+          explanatory: data.explanatory,
+          image_path: data.image_path,
+          prefectures: data.prefectures,
+          update_at: data.update_at.toDate(),
+          writer_name: data.writer_name,
+        });
+      });
+
+      setTimelineData(events);
+      setLoading(false);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching timeline data:", err);
+      setError("タイムラインデータの取得中にエラーが発生しました。");
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTimelineData = async () => {
-      try {
-        setLoading(true);
-        const timelineCollection = collection(db, "timeline");
-        const q = query(
-          timelineCollection,
-          where("prefectures", "==", prefectures)
-          //orderBy("create_at", "desc")
-        );
-
-        const querySnapshot = await getDocs(q);
-        const events: TimelineEvent[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          events.push({
-            id: doc.id,
-            create_at: data.create_at.toDate(),
-            explanatory: data.explanatory,
-            image_path: data.image_path,
-            prefectures: data.prefectures,
-            update_at: data.update_at.toDate(),
-            writer_name: data.writer_name,
-          });
-        });
-
-        setTimelineData(events);
-        setLoading(false);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching timeline data:", err);
-        if (
-          err instanceof Error &&
-          err.message.includes("The query requires an index")
-        ) {
-          setError(
-            "データベースのインデックスが必要です。Firebase Consoleでインデックスを作成してください。"
-          );
-        } else {
-          setError("タイムラインデータの取得中にエラーが発生しました。");
-        }
-        setLoading(false);
-      }
-    };
-
     if (prefectures) {
       fetchTimelineData();
     }
   }, [prefectures]);
 
+  const handleDeleteClick = (event: TimelineEvent) => {
+    setSelectedEvent(event);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (selectedEvent) {
+      try {
+        await deleteDoc(doc(db, "timeline", selectedEvent.id));
+        setDeleteDialogOpen(false);
+        fetchTimelineData(); // Refresh the timeline data
+      } catch (err) {
+        console.error("Error deleting document:", err);
+        setError("イベントの削除中にエラーが発生しました。");
+      }
+    }
+  };
+
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box sx={{ width: 350, p: 2 }}>
+      <Box sx={{ width: 500, p: 2 }}>
         <Typography variant="h6">{prefectures}</Typography>
 
         <Typography variant="h6" sx={{ mb: 2, mt: 4 }}>
@@ -157,8 +178,8 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
                     />
                   )}
                   <Button
-                    startIcon={<EditIcon style={{ fontSize: "12px" }} />}
-                    onClick={onEditClick}
+                    startIcon={<DeleteIcon style={{ fontSize: "12px" }} />}
+                    onClick={() => handleDeleteClick(event)}
                     sx={{ fontSize: "12px", height: "12px" }}
                   >
                     削除
@@ -186,6 +207,27 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
         <DialogContent>
           <EditPage prefecture={prefectures} />
         </DialogContent>
+      </Dialog>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"イベントを削除しますか？"}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            この操作は取り消せません。本当にこのイベントを削除しますか？
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>キャンセル</Button>
+          <Button onClick={handleDeleteConfirm} autoFocus>
+            削除
+          </Button>
+        </DialogActions>
       </Dialog>
     </Drawer>
   );

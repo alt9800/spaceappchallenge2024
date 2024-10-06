@@ -204,7 +204,6 @@ const MapPage: PageComponent = () => {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           prefectures={currentPrefecture}
-          onEditClick={handleEditClick}
         />
       </Drawer>
 

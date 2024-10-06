@@ -39,6 +39,7 @@ export default function AppNavbar() {
       position="fixed"
       sx={{
         display: "none",
+        height: 50,
         boxShadow: 0,
         bgcolor: "background.paper",
         backgroundImage: "none",
@@ -58,13 +59,8 @@ export default function AppNavbar() {
           }}
         >
           <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-            <CustomIcon />
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{ color: "text.primary" }}
-            >
-              都道府県別衛星カタログ　🛰️　
+            <Typography sx={{ color: "text.primary" }}>
+              都道府県別衛星カタログ 🛰️
             </Typography>
           </Stack>
           <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
