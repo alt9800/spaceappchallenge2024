@@ -14,3 +14,6 @@ MainBranchではなくて、featureとかでそれぞれ機能を作った方が
 ▪️[画像がアニメーションするサンプル](./image-animation)
 
 ▪️[日本地図を各都道府県ごとにボタンにする例にモーダルウインドウ表示を作成した+さらにサンプルページをつけているパターン](./simple-svg-modal-popup)
+
+
+▪️[個別ページ新UI](react-sample-page)
