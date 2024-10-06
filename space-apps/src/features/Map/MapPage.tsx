@@ -1,14 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Modal, Typography, Button, TextField } from "@mui/material";
+import { Box, Drawer, Typography, Button, TextField } from "@mui/material";
 import { Feature, Geometry, GeoJsonProperties } from "geojson";
 import { styled } from "@mui/system";
 import * as d3 from "d3";
 import { PageComponent } from "../../components/common/Page";
+
 interface PrefectureData {
   nameJa: string;
   content: string;
   image: string;
 }
+
+const MapContainer = styled(Box)({
+  width: "100%",
+  height: "100vh",
+  position: "relative",
+});
 
 const MapPage: PageComponent = () => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -16,7 +23,7 @@ const MapPage: PageComponent = () => {
     [key: string]: PrefectureData;
   }>({});
   const [currentPrefecture, setCurrentPrefecture] = useState<string>("");
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
   const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [editContent, setEditContent] = useState<string>("");
 
@@ -28,6 +35,11 @@ const MapPage: PageComponent = () => {
         .select(svgRef.current)
         .attr("viewBox", `0 0 ${width} ${height}`)
         .attr("preserveAspectRatio", "xMidYMid meet");
+
+      // Clear any existing content
+      svg.selectAll("*").remove();
+
+      const g = svg.append("g");
 
       const projection = d3
         .geoMercator()
@@ -41,7 +53,7 @@ const MapPage: PageComponent = () => {
         .zoom<SVGSVGElement, unknown>()
         .scaleExtent([1, 8])
         .on("zoom", (event) => {
-          svg.selectAll("path").attr("transform", event.transform.toString());
+          g.attr("transform", event.transform.toString());
         });
 
       svg.call(zoom);
@@ -51,13 +63,12 @@ const MapPage: PageComponent = () => {
       )
         .then((data) => {
           if (data) {
-            svg
-              .selectAll("path")
+            g.selectAll("path")
               .data(data.features)
               .enter()
               .append("path")
               .attr("d", path as any)
-              .attr("fill", "#ccc")  // すべての都道府県を同じ色で初期化
+              .attr("fill", "#ccc")
               .attr("stroke", "#fff")
               .attr("stroke-width", "1")
               .on(
@@ -66,22 +77,23 @@ const MapPage: PageComponent = () => {
                   event: MouseEvent,
                   d: Feature<Geometry, GeoJsonProperties>
                 ) => {
+                  event.stopPropagation();
                   const prefectureName = d.properties?.nam_ja;
                   const prefectureNameEn = d.properties?.nam;
                   if (prefectureName && prefectureNameEn) {
+                    focusOnPrefecture(d, path, svg, zoom);
                     showPrefectureInfo(prefectureName, prefectureNameEn);
                   }
                 }
               )
-              .on("mouseover", function(event, d) {
-                d3.select(this).transition()
+              .on("mouseover", function (event, d) {
+                d3.select(this)
+                  .transition()
                   .duration(200)
                   .attr("fill", "#ff0000");
               })
-              .on("mouseout", function(event, d) {
-                d3.select(this).transition()
-                  .duration(200)
-                  .attr("fill", "#ccc");  // すべての都道府県が同じ色に戻る
+              .on("mouseout", function (event, d) {
+                d3.select(this).transition().duration(200).attr("fill", "#ccc");
               });
 
             // Initialize prefecture data
@@ -108,12 +120,35 @@ const MapPage: PageComponent = () => {
     }
   }, []);
 
+  const focusOnPrefecture = (
+    d: Feature<Geometry, GeoJsonProperties>,
+    path: d3.GeoPath<any, d3.GeoPermissibleObjects>,
+    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+    zoom: d3.ZoomBehavior<SVGSVGElement, unknown>
+  ) => {
+    const bounds = path.bounds(d);
+    const dx = bounds[1][0] - bounds[0][0];
+    const dy = bounds[1][1] - bounds[0][1];
+    const x = (bounds[0][0] + bounds[1][0]) / 2;
+    const y = (bounds[0][1] + bounds[1][1]) / 2;
+    const scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / 800, dy / 600)));
+    const translate = [400 - scale * x, 300 - scale * y];
+
+    svg
+      .transition()
+      .duration(750)
+      .call(
+        zoom.transform,
+        d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+      );
+  };
+
   const showPrefectureInfo = (
     _prefectureNameJa: string,
     prefectureNameEn: string
   ) => {
     setCurrentPrefecture(prefectureNameEn);
-    setModalVisible(true);
+    setDrawerOpen(true);
   };
 
   const handleEditClick = () => {
@@ -154,64 +189,87 @@ const MapPage: PageComponent = () => {
   };
 
   return (
-    <div>
-      <svg ref={svgRef} width="100%" height="100vh"></svg>
+    <MapContainer>
+      <svg ref={svgRef} width="100%" height="100%"></svg>
 
-      {modalVisible && (
-        <div className="modal">
-          <div className="modal-content">
-            <span className="close" onClick={() => setModalVisible(false)}>
-              &times;
-            </span>
-            <h2>{prefectureData[currentPrefecture]?.nameJa}</h2>
-            <div
-              style={{
-                width: "100%",
-                height: "200px",
-                backgroundImage: `url(${prefectureData[currentPrefecture]?.image})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                marginBottom: "10px",
-              }}
-            ></div>
-            <p>{prefectureData[currentPrefecture]?.content}</p>
-            <button onClick={handleEditClick}>編集</button>
-            <a
-              href={`./${currentPrefecture}/index.html`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              詳細ページへ
-            </a>
-          </div>
-        </div>
-      )}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      >
+        <Box sx={{ width: 300, p: 2 }}>
+          <Typography variant="h6">
+            {prefectureData[currentPrefecture]?.nameJa}
+          </Typography>
+          <Box
+            sx={{
+              width: "100%",
+              height: 200,
+              backgroundImage: `url(${prefectureData[currentPrefecture]?.image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              my: 2,
+            }}
+          />
+          <Typography>{prefectureData[currentPrefecture]?.content}</Typography>
+          <Button onClick={handleEditClick} sx={{ mt: 2 }}>
+            編集
+          </Button>
+          <Button
+            href={`./${currentPrefecture}/index.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ mt: 1 }}
+          >
+            詳細ページへ
+          </Button>
+        </Box>
+      </Drawer>
 
       {editModalVisible && (
-        <div className="modal">
-          <div className="modal-content">
-            <span className="close" onClick={() => setEditModalVisible(false)}>
-              &times;
-            </span>
-            <h2>編集</h2>
-            <form onSubmit={handleEditSubmit}>
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                style={{ width: "100%", height: "100px" }}
-              ></textarea>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-              <button type="submit">更新</button>
-            </form>
-          </div>
-        </div>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant="h6">編集</Typography>
+          <form onSubmit={handleEditSubmit}>
+            <TextField
+              multiline
+              rows={4}
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              fullWidth
+              sx={{ mt: 2 }}
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: "none" }}
+              id="image-upload"
+            />
+            <label htmlFor="image-upload">
+              <Button component="span" sx={{ mt: 2 }}>
+                画像をアップロード
+              </Button>
+            </label>
+            <Button type="submit" sx={{ mt: 2 }}>
+              更新
+            </Button>
+          </form>
+        </Box>
       )}
-    </div>
+    </MapContainer>
   );
 };
+
 MapPage.path = "/map";
 export default MapPage;

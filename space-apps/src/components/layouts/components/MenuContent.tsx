@@ -24,7 +24,6 @@ export default function MenuContent() {
   const isSelected = (path: string) => location.pathname === path;
   return (
     <>
-     
       <Stack
         sx={{
           flexGrow: 1,
@@ -32,7 +31,6 @@ export default function MenuContent() {
           width: "200pt",
         }}
       >
-        
         <List dense>
           {mainListItems.map((item, index) => (
             <ListItem key={index} disablePadding sx={{ display: "block" }}>
