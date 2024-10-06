@@ -14,10 +14,14 @@ import { addDoc, collection } from "firebase/firestore";
 
 interface EditPageProps {
   prefecture: string;
+  prefecture_name: string;
 }
 type PageComponentWithProps<P = {}> = React.FC<P> & { path: string };
 
-const EditPage: PageComponentWithProps<EditPageProps> = ({ prefecture }) => {
+const EditPage: PageComponentWithProps<EditPageProps> = ({
+  prefecture,
+  prefecture_name,
+}) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [explanation, setExplanation] = useState("");
@@ -85,7 +89,7 @@ const EditPage: PageComponentWithProps<EditPageProps> = ({ prefecture }) => {
       gap={1}
       p={3}
     >
-      <Typography variant="h6">編集 - {prefecture}</Typography>
+      <Typography variant="h6">編集 - {prefecture_name}</Typography>
 
       <Box
         sx={{

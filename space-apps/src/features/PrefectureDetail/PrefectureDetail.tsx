@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Dialog,
   DialogContent,
-  IconButton,
   DialogActions,
   DialogTitle,
 } from "@mui/material";
@@ -24,13 +23,11 @@ import {
   Image as ImageIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Close as CloseIcon,
 } from "@mui/icons-material";
 import {
   collection,
   query,
   where,
-  orderBy,
   getDocs,
   doc,
   deleteDoc,
@@ -52,12 +49,14 @@ interface PrefectureTimelineProps {
   open: boolean;
   onClose: () => void;
   prefectures: string;
+  prefecture_name: string;
 }
 
 const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
   open,
   onClose,
   prefectures,
+  prefecture_name,
 }) => {
   const [timelineData, setTimelineData] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +129,7 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box sx={{ width: 500, p: 2 }}>
-        <Typography variant="h6">{prefectures}</Typography>
+        <Typography variant="h6">{prefecture_name}</Typography>
 
         <Typography variant="h6" sx={{ mb: 2, mt: 4 }}>
           タイムライン
@@ -205,7 +204,10 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
         maxWidth="sm"
       >
         <DialogContent>
-          <EditPage prefecture={prefectures} />
+          <EditPage
+            prefecture={prefectures}
+            prefecture_name={prefecture_name}
+          />
         </DialogContent>
       </Dialog>
       <Dialog

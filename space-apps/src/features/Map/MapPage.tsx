@@ -204,6 +204,7 @@ const MapPage: PageComponent = () => {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           prefectures={currentPrefecture}
+          prefecture_name={prefectureData[currentPrefecture]?.nameJa || ""}
         />
       </Drawer>
 
