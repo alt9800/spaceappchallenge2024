@@ -39,13 +39,14 @@ export default function AppNavbar() {
     <AppBar
       position="fixed"
       sx={{
-        display: { xs: "auto", md: "none" },
+        display: "none",
         boxShadow: 0,
         bgcolor: "background.paper",
         backgroundImage: "none",
         borderBottom: "1px solid",
         borderColor: "divider",
         top: "var(--template-frame-height, 0px)",
+
       }}
     >
       <Toolbar variant="regular">

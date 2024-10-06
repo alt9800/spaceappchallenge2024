@@ -10,28 +10,6 @@ interface PrefectureData {
   image: string;
 }
 
-const MapContainer = styled(Box)({
-  width: "100%",
-  maxWidth: 800,
-  margin: "0 auto",
-});
-
-const ImageContainer = styled(Box)({
-  width: "100%",
-  height: 200,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  marginBottom: 10,
-  animation: "changeImage 9s infinite",
-});
-
-interface MapFeature extends Feature<Geometry> {
-  properties: {
-    nam: string;
-    nam_ja: string;
-  };
-}
-
 const MapPage: PageComponent = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [prefectureData, setPrefectureData] = useState<{
@@ -177,7 +155,7 @@ const MapPage: PageComponent = () => {
 
   return (
     <div>
-      <svg ref={svgRef} width="100%" height="600px"></svg>
+      <svg ref={svgRef} width="100%" height="100vh"></svg>
 
       {modalVisible && (
         <div className="modal">
