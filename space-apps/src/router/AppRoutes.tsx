@@ -5,6 +5,7 @@ import {
   createBrowserRouter,
 } from "react-router-dom";
 import MapPage from "../features/Map/MapPage";
+import EditPage from "../features/Edit/EditPage";
 
 const routes: RouteObject[] = [
   {
@@ -15,6 +16,10 @@ const routes: RouteObject[] = [
     path: MapPage.path,
     element: <MapPage />,
   },
+  {
+    path: EditPage.path,
+    element: < EditPage />,
+  }
 ];
 
 const router = createBrowserRouter(routes);
