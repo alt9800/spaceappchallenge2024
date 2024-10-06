@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import MapPage from "../features/Map/MapPage";
 import EditPage from "../features/Edit/EditPage";
+import Layout from "../components/layouts/Layout";
 
 const routes: RouteObject[] = [
   {
@@ -18,11 +19,21 @@ const routes: RouteObject[] = [
   },
   {
     path: EditPage.path,
-    element: < EditPage />,
-  }
+    element: <EditPage />,
+  },
 ];
 
-const router = createBrowserRouter(routes);
+const router = createBrowserRouter([
+  {
+    path: "/",
+    children: [
+      {
+        element: <Layout />,
+        children: routes,
+      },
+    ],
+  },
+]);
 
 export const AppRoutes = () => {
   return <RouterProvider router={router} />;
