@@ -112,10 +112,20 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
         ) : error ? (
           <Typography color="error">{error}</Typography>
         ) : (
-          <Timeline>
+          <Timeline >
             {timelineData.map((event, index) => (
-              <TimelineItem key={event.id}>
-                <TimelineSeparator>
+              <TimelineItem
+                key={event.id}
+                sx={{
+                  '&:before': { display: 'none' },
+                  '&.MuiTimelineItem-positionRight': {
+                    '&::before': {
+                      display: 'none',
+                    },
+                  },
+                }}
+              >
+                <TimelineSeparator >
                   <TimelineDot color="primary">
                     {event.image_path ? <ImageIcon /> : <EventIcon />}
                   </TimelineDot>
@@ -139,17 +149,21 @@ const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
                       sx={{ maxWidth: "100%", height: "auto", mt: 1 }}
                     />
                   )}
+                  <Button
+                    startIcon={<EditIcon style={{ fontSize: '12px' }} />}
+                    onClick={onEditClick}
+                    sx={{ fontSize: '12px', height: '12px' }}
+
+                  >
+                    削除
+                  </Button>
                 </TimelineContent>
               </TimelineItem>
             ))}
           </Timeline>
         )}
-
-        <Button startIcon={<EditIcon />} onClick={onEditClick} sx={{ mt: 2 }}>
-          削除
-        </Button>
       </Box>
-      <Button startIcon={<EditIcon />} onClick={onEditClick} sx={{ mt: 2 }}>
+      <Button variant="outlined" startIcon={<EditIcon />} onClick={onEditClick} sx={{ mt: 2, mx: 3 }}>
         登録
       </Button>
     </Drawer>
