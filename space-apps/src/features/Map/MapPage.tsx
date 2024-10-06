@@ -4,6 +4,7 @@ import { Feature, Geometry, GeoJsonProperties } from "geojson";
 import { styled } from "@mui/system";
 import * as d3 from "d3";
 import { PageComponent } from "../../components/common/Page";
+import PrefectureTimeline from "../PrefectureDetail/PrefectureDetail";
 
 interface PrefectureData {
   nameJa: string;
@@ -197,33 +198,12 @@ const MapPage: PageComponent = () => {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       >
-        <Box sx={{ width: 300, p: 2 }}>
-          <Typography variant="h6">
-            {prefectureData[currentPrefecture]?.nameJa}
-          </Typography>
-          <Box
-            sx={{
-              width: "100%",
-              height: 200,
-              backgroundImage: `url(${prefectureData[currentPrefecture]?.image})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              my: 2,
-            }}
-          />
-          <Typography>{prefectureData[currentPrefecture]?.content}</Typography>
-          <Button onClick={handleEditClick} sx={{ mt: 2 }}>
-            編集
-          </Button>
-          <Button
-            href={`./${currentPrefecture}/index.html`}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{ mt: 1 }}
-          >
-            詳細ページへ
-          </Button>
-        </Box>
+        <PrefectureTimeline
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          prefectures={currentPrefecture}
+          onEditClick={handleEditClick}
+        />
       </Drawer>
 
       {editModalVisible && (

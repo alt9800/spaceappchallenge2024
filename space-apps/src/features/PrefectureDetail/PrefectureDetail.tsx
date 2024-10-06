@@ -1,0 +1,159 @@
+import React, { useState, useEffect } from "react";
+import {
+  Drawer,
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+import {
+  Timeline,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineContent,
+  TimelineDot,
+} from "@mui/lab";
+import {
+  Event as EventIcon,
+  Image as ImageIcon,
+  Edit as EditIcon,
+} from "@mui/icons-material";
+import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { db } from "../../config/firebase";
+
+interface TimelineEvent {
+  id: string;
+  create_at: Date;
+  explanatory: string;
+  image_path: string;
+  prefectures: string;
+  update_at: Date;
+  writer_name: string;
+}
+
+interface PrefectureTimelineProps {
+  open: boolean;
+  onClose: () => void;
+  prefectures: string;
+  onEditClick: () => void;
+}
+
+const PrefectureTimeline: React.FC<PrefectureTimelineProps> = ({
+  open,
+  onClose,
+  prefectures,
+  onEditClick,
+}) => {
+  const [timelineData, setTimelineData] = useState<TimelineEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTimelineData = async () => {
+      try {
+        setLoading(true);
+        const timelineCollection = collection(db, "timeline");
+        const q = query(
+          timelineCollection,
+          where("prefectures", "==", prefectures)
+          //orderBy("create_at", "desc")
+        );
+
+        const querySnapshot = await getDocs(q);
+        const events: TimelineEvent[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          events.push({
+            id: doc.id,
+            create_at: data.create_at.toDate(),
+            explanatory: data.explanatory,
+            image_path: data.image_path,
+            prefectures: data.prefectures,
+            update_at: data.update_at.toDate(),
+            writer_name: data.writer_name,
+          });
+        });
+
+        setTimelineData(events);
+        setLoading(false);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching timeline data:", err);
+        if (
+          err instanceof Error &&
+          err.message.includes("The query requires an index")
+        ) {
+          setError(
+            "データベースのインデックスが必要です。Firebase Consoleでインデックスを作成してください。"
+          );
+        } else {
+          setError("タイムラインデータの取得中にエラーが発生しました。");
+        }
+        setLoading(false);
+      }
+    };
+
+    if (prefectures) {
+      fetchTimelineData();
+    }
+  }, [prefectures]);
+
+  return (
+    <Drawer anchor="right" open={open} onClose={onClose}>
+      <Box sx={{ width: 350, p: 2 }}>
+        <Typography variant="h6">{prefectures}</Typography>
+
+        <Typography variant="h6" sx={{ mb: 2, mt: 4 }}>
+          タイムライン
+        </Typography>
+        {loading ? (
+          <CircularProgress />
+        ) : error ? (
+          <Typography color="error">{error}</Typography>
+        ) : (
+          <Timeline>
+            {timelineData.map((event, index) => (
+              <TimelineItem key={event.id}>
+                <TimelineSeparator>
+                  <TimelineDot color="primary">
+                    {event.image_path ? <ImageIcon /> : <EventIcon />}
+                  </TimelineDot>
+                  {index < timelineData.length - 1 && <TimelineConnector />}
+                </TimelineSeparator>
+                <TimelineContent>
+                  <Typography variant="h6" component="span">
+                    {event.explanatory}
+                  </Typography>
+                  <Typography>
+                    {event.create_at.toLocaleDateString()}
+                  </Typography>
+                  <Typography variant="body2">
+                    作成者: {event.writer_name}
+                  </Typography>
+                  {event.image_path && (
+                    <Box
+                      component="img"
+                      src={event.image_path}
+                      alt="Event image"
+                      sx={{ maxWidth: "100%", height: "auto", mt: 1 }}
+                    />
+                  )}
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+          </Timeline>
+        )}
+
+        <Button startIcon={<EditIcon />} onClick={onEditClick} sx={{ mt: 2 }}>
+          削除
+        </Button>
+      </Box>
+      <Button startIcon={<EditIcon />} onClick={onEditClick} sx={{ mt: 2 }}>
+        登録
+      </Button>
+    </Drawer>
+  );
+};
+
+export default PrefectureTimeline;
