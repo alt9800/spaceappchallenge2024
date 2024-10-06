@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Drawer, Typography, Button, TextField } from "@mui/material";
 import { Feature, Geometry, GeoJsonProperties } from "geojson";
 import { styled } from "@mui/system";
@@ -13,9 +13,9 @@ interface PrefectureData {
 }
 
 const MapContainer = styled(Box)({
-  width: "100%",
+  width: "100vw",
   height: "100vh",
-  position: "relative",
+  // position: "relative",
 });
 
 const MapPage: PageComponent = () => {
@@ -189,10 +189,39 @@ const MapPage: PageComponent = () => {
     }
   };
 
+
+  const [viewBox, setViewBox] = useState('0 0 600 800');
+
+  const updateViewBox = useCallback(() => {
+    if (svgRef.current) {
+      const { width, height } = svgRef.current.getBoundingClientRect();
+      setViewBox(`0 0 ${width} ${height}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateViewBox();
+    window.addEventListener('resize', updateViewBox);
+
+    return () => window.removeEventListener('resize', updateViewBox);
+  }, [updateViewBox]);
+
   return (
     <MapContainer>
-      <svg ref={svgRef} width="100%" height="100%"></svg>
-
+      <Box
+        display={"flex"}
+        justifyContent={"center"}
+        alignItems={"center"}
+        width="100vw"
+        height="100vh"
+      >
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          // viewBox={viewBox}
+        ></svg>
+      </Box>
       <Drawer
         anchor="right"
         open={drawerOpen}
